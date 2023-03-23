@@ -26,6 +26,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private TMP_Text _coinsCount;
     [SerializeField] private TMP_Text _lifeCount;
     [SerializeField] private GameObject _deathMenu;
+    [SerializeField] private GameObject _tutorial;
+
+    private bool _tutorialTryLeft;
+    private bool _tutorialTryRight;
+    private bool _tutorialComplete;
 
     public bool _canJump = true;
     public bool _canMove = true;
@@ -38,6 +43,10 @@ public class PlayerController : MonoBehaviour
 
     public void Restart()
     {
+        if (_tutorialComplete)
+        {
+            _tutorial.SetActive(false);
+        }
         StartCoroutine(GetObjectsCloser());
         if (!_canMove)
         {
@@ -51,6 +60,7 @@ public class PlayerController : MonoBehaviour
         }
         _coins = PlayerPrefs.GetInt("coins");
         _lifeCount.SetText(_health.ToString());
+        _coinsCount.SetText(_coins.ToString());
         _playerInput = new PlayerInputActions();
         _playerInput.TankInput.Enable();
 
@@ -84,6 +94,11 @@ public class PlayerController : MonoBehaviour
 
     public void TryJumpRight(InputAction.CallbackContext context)
     {
+        if (!_tutorialComplete)
+        {
+            _tutorialTryRight = true;
+            CheckTutorial();
+        }
         if (_canJump && _canMove)
         {
             if (_currX + 1 < _maxX)
@@ -98,6 +113,11 @@ public class PlayerController : MonoBehaviour
 
     public void TryJumpLeft(InputAction.CallbackContext context)
     {
+        if (!_tutorialComplete)
+        {
+            _tutorialTryLeft = true;
+            CheckTutorial();
+        }
         if (_canJump && _canMove)
         {
             if (_currX - 1 >= 0)
@@ -127,6 +147,15 @@ public class PlayerController : MonoBehaviour
             _generator.Stop();
             _canMove = false;
             _deathMenu.SetActive(true);
+        }
+    }
+
+    private void CheckTutorial()
+    {
+        if (_tutorialTryLeft && _tutorialTryRight)
+        {
+            _tutorialComplete = true;
+            _tutorial.GetComponent<Animator>().SetTrigger("Complete");
         }
     }
 }
