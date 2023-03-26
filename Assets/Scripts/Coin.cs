@@ -7,6 +7,7 @@ using static Unity.VisualScripting.StickyNote;
 public class Coin : MonoBehaviour
 {
     [SerializeField] private Animator _coinAnimator;
+    [SerializeField] private AudioSource _audio;
     [SerializeField] private Color _coinColorStart;
     [SerializeField] private Color _coinColorEnd;
     [SerializeField] private float _animationTime;
@@ -20,12 +21,13 @@ public class Coin : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<PlayerController>(out PlayerController _player))
+        if (other.TryGetComponent<Wallet>(out Wallet _wallet))
         {
             _coinAnimator.SetTrigger("Collect");
+            _audio.Play();
             _dissapear = true;
             _rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            _player.CollectCoint(1);
+            _wallet.CollectCoint(1);
         }
     }
 

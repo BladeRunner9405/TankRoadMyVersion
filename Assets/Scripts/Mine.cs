@@ -8,11 +8,11 @@ public class Mine : MonoBehaviour
     [SerializeField] private GameObject _mine;
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<PlayerController>(out PlayerController _player))
+        if (other.TryGetComponent<Damageable>(out Damageable _damageable))
         {
             _explosion.SetActive(true);
             _mine.SetActive(false);
-            _player.TakeDamage(1);
+            _damageable.TakeDamage(1);
         }
     }
 }

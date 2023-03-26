@@ -26,7 +26,7 @@ public class MovingLayer : MonoBehaviour
     }
     private void Update()
     {
-        transform.position -= new Vector3(0, 0, _speed / 60);
+        transform.position -= new Vector3(0, 0, _speed * Time.deltaTime);
     }
 
     public Transform GetNatureSlot()

@@ -6,6 +6,8 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class ObjectsGenerator : MonoBehaviour
 {
+    [SerializeField] private Tank _tank;
+    [SerializeField] private WheelsAnimation _playerWheels;
     [SerializeField] private Transform _layerHolder;
 
     [SerializeField] private GameObject[] _natureObjects;
@@ -23,15 +25,14 @@ public class ObjectsGenerator : MonoBehaviour
     [SerializeField] private float _layerSpeed;
     [SerializeField] private float _layerSpeedChange;
     [SerializeField] private float _layerSpeedChangeTimeOut;
-    [SerializeField] private WheelsAnimation _playerWheels;
 
 
     private MovingLayer _currLayer;
     private MovingLayer _prevLayer;
+    private bool isGameOver = false;
 
-    private int _badLineCount = 3;
-
-    private bool _isGameOver = false;
+    public float _currLayerSpeed;
+    public float _currLayerSpeedChange;
 
     private void Awake()
     {
@@ -39,13 +40,13 @@ public class ObjectsGenerator : MonoBehaviour
     }
     public void Restart()
     {
-        _badLineCount = 15;
-        foreach (Transform child in _layerHolder)
+        foreach (Transform child in _layerHolder.transform)
         {
-            GameObject.Destroy(child.gameObject);
+            Destroy(child.gameObject);
         }
-        _layerSpeed = 3;
-        _isGameOver = false;
+        isGameOver = false;
+        _currLayerSpeed = _layerSpeed;
+        _currLayerSpeedChange = _layerSpeedChange;
         CreateNewLayer();
         StartCoroutine(GenerateRandomNature());
         StartCoroutine(GenerateRandomInteractive());
@@ -58,83 +59,85 @@ public class ObjectsGenerator : MonoBehaviour
         _currLayer = Instantiate(_layerPrefab, _layerStartPosition.position, Quaternion.identity, _layerHolder).GetComponent<MovingLayer>();
 
         _currLayer.SetPrevious(_prevLayer);
-        _currLayer.SetSpeed(_layerSpeed);
+        _currLayer.SetSpeed(_currLayerSpeed);
     }
 
 
     private IEnumerator GenerateRandomNature()
     {
-        if (!_isGameOver)
+        if (!isGameOver)
         {
-            yield return new WaitForSeconds(_timeOut / _layerSpeed);
-            if (_badLineCount > 0)
-            {
-                _badLineCount -= 1;
-            }
-            else {
-                for (int i = 0; i < _naturePositions.Length; i++)
-                {
-                    if (Random.value > 1 - _natureSpawnChance)
-                    {
-                        Instantiate(_natureObjects[Random.Range(0, _natureObjects.Length)], _naturePositions[i].position, Quaternion.identity, _currLayer.GetNatureSlot());
-                    }
-                }
-            }
+            yield return new WaitForSeconds(_timeOut / _currLayerSpeed);
+            GenerateNatureLayer();
             StartCoroutine(GenerateRandomNature());
         }
     }
 
     private IEnumerator GenerateRandomInteractive()
     {
-        if (!_isGameOver)
+        if (!isGameOver)
         {
-            yield return new WaitForSeconds(_timeOut / _layerSpeed);
-            if (_badLineCount > 0)
-            {
-                
-            }
-            else
-            {
-                for (int i = 0; i < _interactivePositions.Length; i++)
-                {
-                    if (Random.value > 1 - _interactiveSpawnChance)
-                    {
-                        Instantiate(_interactiveObjects[Random.Range(0, _interactiveObjects.Length)], _interactivePositions[i].position, Quaternion.identity, _currLayer.GetInteractiveSlot());
-                    }
-                }
-            }
+            yield return new WaitForSeconds(_timeOut / _currLayerSpeed);
+            GenerateInteractiveLayer();
             StartCoroutine(GenerateRandomInteractive());
         }
     }
 
+    private void GenerateNatureLayer()
+    {
+        for (int i = 0; i < _naturePositions.Length; i++)
+        {
+            if (Random.value > 1 - _natureSpawnChance)
+            {
+                Instantiate(_natureObjects[Random.Range(0, _natureObjects.Length)], _naturePositions[i].position, Quaternion.identity, _currLayer.GetNatureSlot());
+            }
+        }
+    }
 
+    private void GenerateInteractiveLayer()
+    {
+        for (int i = 0; i < _interactivePositions.Length; i++)
+        {
+            if (Random.value > 1 - _interactiveSpawnChance)
+            {
+                Instantiate(_interactiveObjects[Random.Range(0, _interactiveObjects.Length)], _interactivePositions[i].position, Quaternion.identity, _currLayer.GetInteractiveSlot());
+            }
+        }
+    }
 
     private IEnumerator ChangeSpeed()
     {
-        if (!_isGameOver)
+        yield return new WaitForSeconds(_layerSpeedChangeTimeOut);
+        if (!isGameOver)
         {
-            _layerSpeed += _layerSpeedChange;
-            ResetLayersSpeed();
-            yield return new WaitForSeconds(_layerSpeedChangeTimeOut);
-            StartCoroutine(ChangeSpeed());
+            _playerWheels.SetSpeed(_currLayerSpeed);
+            _currLayerSpeed += _currLayerSpeedChange;
         }
+        else
+        {
+            _currLayerSpeed *= 0.75f;
+            if (_currLayerSpeed < 2 && _currLayerSpeed != 0)
+            {
+                _currLayerSpeed = 0;
+            }
+        }
+        ResetLayersSpeed();
+        StartCoroutine(ChangeSpeed());
     }
 
     private void ResetLayersSpeed()
     {
-        _currLayer.SetSpeed(_layerSpeed);
-        _playerWheels.SetSpeed(_layerSpeed);
+        _currLayer.SetSpeed(_currLayerSpeed);
     }
 
     public void SetSpeed(float speed)
     {
-        _layerSpeed = speed;
+        _currLayerSpeed = speed;
     }
 
     public void Stop()
     {
-        _currLayer.SetSpeed(0);
+        isGameOver = true;
         _playerWheels.SetSpeed(0.1f);
-        _isGameOver = true;
     }
 }
